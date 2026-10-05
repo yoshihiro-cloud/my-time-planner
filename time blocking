@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Time Blocking & Planner Bulanan</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        zinc: {
+                            850: '#151518',
+                            950: '#09090b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4d4d8;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa;
+        }
+
+        /* Glassmorphism subtle effects */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glass-panel {
+            background: rgba(18, 18, 23, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Hide scrollbars for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Print styles */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-full flex flex-col transition-colors duration-200 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-30 border-b border-zinc-200/80 dark:border-zinc-800/80 glass-panel no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="app.setView('daily')">
+                <div class="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-sm shadow-sm transition-transform active:scale-95">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div class="hidden sm:block">
+                    <h1 class="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Chronos</h1>
+                    <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Time Blocking & Planner</p>
+                </div>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <div class="flex items-center bg-zinc-200/60 dark:bg-zinc-800/60 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700/50">
+                <button id="viewDailyBtn" onclick="app.setView('daily')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+                    <i class="fa-solid fa-calendar-day mr-1.5 opacity-70"></i>Harian
+                </button>
+                <button id="viewMonthlyBtn" onclick="app.setView('monthly')" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+                    <i class="fa-solid fa-calendar-days mr-1.5 opacity-70"></i>Bulanan
+                </button>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center space-x-2">
+                <!-- Backup / Data Switch -->
+                <button onclick="app.openBackupModal()" title="Cadangkan / Impor Data" class="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors text-sm">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggleBtn" onclick="app.toggleTheme()" title="Ubah Tema" class="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors text-sm">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline text-amber-400"></i>
+                </button>
+
+                <!-- Add New Block (Desktop) -->
+                <button onclick="app.openModal()" class="hidden sm:flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-medium text-xs shadow-sm transition-all active:scale-95">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Blok Baru</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main App Wrapper -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 sm:pb-8">
+
+        <!-- Date Header Navigation Bar -->
+        <div class="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm no-print">
+            
+            <!-- Date Display and Picker -->
+            <div class="flex items-center space-x-3">
+                <button onclick="app.navigateDate(-1)" class="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                
+                <div class="flex items-center space-x-2">
+                    <input type="date" id="mainDatePicker" onchange="app.setDate(this.value)" class="bg-transparent text-sm font-bold text-zinc-900 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer p-0">
+                    <span id="formattedDateText" class="text-xs text-zinc-500 dark:text-zinc-400 font-medium hidden md:inline"></span>
+                </div>
+
+                <button onclick="app.navigateDate(1)" class="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Quick Jump Buttons -->
+            <div class="flex items-center justify-between sm:justify-end gap-2">
+                <button onclick="app.jumpToToday()" class="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300 transition-colors">
+                    Hari Ini
+                </button>
+                
+                <div id="dailyHeaderStats" class="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <span id="dailyProgressText">0% Selesai</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 1: DAILY TIME BLOCKING GRID -->
+        <div id="dailyView" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT SIDEBAR: Productivity Analytics & Quick Templates -->
+            <div class="lg:col-span-4 space-y-6 no-print">
+                
+                <!-- Daily Progress Card -->
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Ringkasan Hari Ini</h2>
+                        <span id="progressPercentageBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
+                            0%
+                        </span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden mb-4">
+                        <div id="dailyProgressBar" class="bg-zinc-900 dark:bg-zinc-100 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Counters -->
+                    <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                        <div class="p-2">
+                            <p class="text-[10px] text-zinc-400 uppercase font-semibold">Total Blok</p>
+                            <p id="totalCount" class="text-lg font-bold text-zinc-900 dark:text-zinc-100">0</p>
+                        </div>
+                        <div class="p-2">
+                            <p class="text-[10px] text-emerald-500 uppercase font-semibold">Selesai</p>
+                            <p id="doneCount" class="text-lg font-bold text-emerald-600 dark:text-emerald-400">0</p>
+                        </div>
+                        <div class="p-2">
+                            <p class="text-[10px] text-amber-500 uppercase font-semibold">Proses</p>
+                            <p id="ongoingCount" class="text-lg font-bold text-amber-600 dark:text-amber-400">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Time Allocation -->
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-3">Alokasi Waktu Kategori</h2>
+                    <div id="categoryAllocationList" class="space-y-2.5 text-xs">
+                        <p class="text-zinc-400 italic text-center py-2">Belum ada kegiatan terjadwal hari ini.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Add Templates -->
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Templat Cepat</h2>
+                        <i class="fa-solid fa-bolt text-amber-500 text-xs"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <button onclick="app.addQuickTemplate('Deep Work', 'Kerja Fokus / Proyek Utama', 120, 'indigo')" class="w-full flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all text-xs font-medium text-left group">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                <span>Deep Work (2 Jam)</span>
+                            </span>
+                            <i class="fa-solid fa-plus text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"></i>
+                        </button>
+
+                        <button onclick="app.addQuickTemplate('Rapat', 'Rapat Koordinasi Tim', 60, 'sky')" class="w-full flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all text-xs font-medium text-left group">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                                <span>Rapat Tim (1 Jam)</span>
+                            </span>
+                            <i class="fa-solid fa-plus text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"></i>
+                        </button>
+
+                        <button onclick="app.addQuickTemplate('Istirahat', 'Makan Siang & Istirahat', 60, 'amber')" class="w-full flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all text-xs font-medium text-left group">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <span>Istirahat / Makan (1 Jam)</span>
+                            </span>
+                            <i class="fa-solid fa-plus text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"></i>
+                        </button>
+
+                        <button onclick="app.addQuickTemplate('Kesehatan', 'Olahraga & Stretching', 45, 'emerald')" class="w-full flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all text-xs font-medium text-left group">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span>Olahraga (45 Mnt)</span>
+                            </span>
+                            <i class="fa-solid fa-plus text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT MAIN: Timeline Grid Canvas -->
+            <div class="lg:col-span-8 space-y-4">
+                
+                <!-- Category Filter Pills -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar no-print">
+                    <button onclick="app.setCategoryFilter('ALL')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" data-cat="ALL">
+                        Semua
+                    </button>
+                    <button onclick="app.setCategoryFilter('Deep Work')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900" data-cat="Deep Work">
+                        Deep Work
+                    </button>
+                    <button onclick="app.setCategoryFilter('Rapat')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900" data-cat="Rapat">
+                        Rapat
+                    </button>
+                    <button onclick="app.setCategoryFilter('Belajar')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900" data-cat="Belajar">
+                        Belajar
+                    </button>
+                    <button onclick="app.setCategoryFilter('Istirahat')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900" data-cat="Istirahat">
+                        Istirahat
+                    </button>
+                    <button onclick="app.setCategoryFilter('Kesehatan')" class="category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900" data-cat="Kesehatan">
+                        Kesehatan
+                    </button>
+                </div>
+
+                <!-- Timeline Visual Sheet -->
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm overflow-hidden relative">
+                    <div id="timelineCanvas" class="relative overflow-y-auto max-h-[720px] p-4 sm:p-6 select-none">
+                        
+                        <!-- Hourly Background Ruler (05:00 - 23:00) -->
+                        <div id="hourlyGridLines" class="relative min-h-[1140px] border-l border-zinc-200 dark:border-zinc-800 ml-12 sm:ml-16">
+                            
+                            <!-- Dynamic Blocks Overlay -->
+                            <div id="blocksContainer" class="absolute inset-0 z-10 mr-2 sm:mr-4"></div>
+
+                            <!-- Live Current Time Indicator Line -->
+                            <div id="liveTimeLine" class="absolute left-0 right-0 z-20 hidden pointer-events-none flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-rose-500 -ml-1.5 shadow-sm"></div>
+                                <div class="h-0.5 bg-rose-500 flex-grow"></div>
+                                <span id="liveTimeBadge" class="text-[10px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded ml-1 shadow-sm">12:00</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- VIEW 2: 1-MONTH PLANNING CALENDAR VIEW -->
+        <div id="monthlyView" class="hidden space-y-6">
+            
+            <!-- Month Header Controls -->
+            <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                    <div>
+                        <h2 id="monthlyCalendarTitle" class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Bulan Ini</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Klik tanggal mana saja untuk merencanakan jam kegiatan hari tersebut.</p>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button onclick="app.navigateMonth(-1)" class="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <button onclick="app.jumpToCurrentMonth()" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
+                            Bulan Ini
+                        </button>
+                        <button onclick="app.navigateMonth(1)" class="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Monthly Overall Key Metrics -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-center">
+                    <div class="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-100 dark:border-zinc-800">
+                        <p class="text-[10px] text-zinc-400 uppercase font-semibold">Total Jam Terencana</p>
+                        <p id="monthTotalHours" class="text-base font-bold text-zinc-900 dark:text-zinc-100">0 Jam</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-100 dark:border-zinc-800">
+                        <p class="text-[10px] text-zinc-400 uppercase font-semibold">Total Kegiatan</p>
+                        <p id="monthTotalTasks" class="text-base font-bold text-zinc-900 dark:text-zinc-100">0</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30">
+                        <p class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold">Selesai</p>
+                        <p id="monthCompletedTasks" class="text-base font-bold text-emerald-600 dark:text-emerald-400">0</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30">
+                        <p class="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-semibold">Tingkat Capaian</p>
+                        <p id="monthCompletionRate" class="text-base font-bold text-indigo-600 dark:text-indigo-400">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Calendar Grid Container -->
+            <div class="bg-white dark:bg-zinc-900 rounded-2xl p-4 sm:p-6 border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm overflow-hidden">
+                <!-- Day Names Bar -->
+                <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                    <div>Ming</div>
+                    <div>Sen</div>
+                    <div>Sel</div>
+                    <div>Rab</div>
+                    <div>Kam</div>
+                    <div>Jum</div>
+                    <div>Sab</div>
+                </div>
+
+                <!-- Days Cell Grid -->
+                <div id="monthlyGridCells" class="grid grid-cols-7 gap-1 sm:gap-2">
+                    <!-- Dynamic Month Cells -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-zinc-200/80 dark:border-zinc-800/80 px-4 py-2 flex items-center justify-around z-40 sm:hidden no-print">
+        <button onclick="app.setView('daily')" id="mobileNavDaily" class="flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold">
+            <i class="fa-solid fa-clock text-base"></i>
+            <span class="text-[10px]">Hari Ini</span>
+        </button>
+
+        <button onclick="app.openModal()" class="flex items-center justify-center w-11 h-11 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full shadow-lg -mt-5 active:scale-95 transition-transform">
+            <i class="fa-solid fa-plus text-base"></i>
+        </button>
+
+        <button onclick="app.setView('monthly')" id="mobileNavMonthly" class="flex flex-col items-center gap-0.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200">
+            <i class="fa-solid fa-calendar-days text-base"></i>
+            <span class="text-[10px]">Bulanan</span>
+        </button>
+    </nav>
+
+    <!-- MODAL 1: Add / Edit Time Block Dialog -->
+    <div id="blockModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden my-8 transform transition-all">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
+                <h3 id="modalTitleText" class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Tambah Blok Waktu</span>
+                </h3>
+                <button onclick="app.closeModal()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form id="blockForm" onsubmit="app.saveBlock(event)" class="p-6 space-y-4">
+                <input type="hidden" id="inputBlockId">
+
+                <!-- Title -->
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Nama Kegiatan *</label>
+                    <input type="text" id="inputTitle" required placeholder="misal: Mengerjakan Laporan Keuangan" class="w-full px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:outline-none transition-all">
+                </div>
+
+                <!-- Time Range -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Jam Mulai *</label>
+                        <input type="time" id="inputStartTime" min="05:00" max="23:59" required class="w-full px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Jam Selesai *</label>
+                        <input type="time" id="inputEndTime" min="05:00" max="23:59" required class="w-full px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:outline-none transition-all">
+                    </div>
+                </div>
+
+                <!-- Category & Priority -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Kategori</label>
+                        <select id="inputCategory" class="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none">
+                            <option value="Deep Work">Deep Work</option>
+                            <option value="Rapat">Rapat / Meeting</option>
+                            <option value="Belajar">Belajar & Riset</option>
+                            <option value="Kesehatan">Kesehatan / Olahraga</option>
+                            <option value="Istirahat">Istirahat & Makan</option>
+                            <option value="Pribadi">Pribadi / Rutinitas</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Status</label>
+                        <select id="inputStatus" class="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none">
+                            <option value="Rencana">📋 Rencana</option>
+                            <option value="Berjalan">⏳ Berjalan</option>
+                            <option value="Selesai">✅ Selesai</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Color Palette Choice -->
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">Aksen Warna</label>
+                    <div id="colorPickerContainer" class="flex items-center space-x-3">
+                        <!-- Dynamic Radios -->
+                    </div>
+                </div>
+
+                <!-- Subtasks -->
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Checklist / Sub-Task</label>
+                    <div id="subtasksListContainer" class="space-y-2 mb-2 max-h-36 overflow-y-auto pr-1"></div>
+                    <button type="button" onclick="app.appendSubtaskRow()" class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 py-1">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>Tambah Sub-task</span>
+                    </button>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Catatan</label>
+                    <textarea id="inputNotes" rows="2" placeholder="Detail, link, atau catatan singkat..." class="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none"></textarea>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
+                    <button type="button" id="deleteBtnModal" onclick="app.deleteCurrentBlock()" class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 font-semibold text-xs transition-colors hidden">
+                        <i class="fa-solid fa-trash mr-1"></i> Hapus
+                    </button>
+
+                    <div class="flex items-center space-x-2 ml-auto">
+                        <button type="button" onclick="app.closeModal()" class="px-4 py-2 rounded-xl text-zinc-600 dark:text-zinc-400 font-semibold text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold text-xs shadow-sm hover:opacity-90 transition-opacity">
+                            Simpan Blok
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Backup / JSON Export & Import -->
+    <div id="backupModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden p-6 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <i class="fa-solid fa-database text-xs"></i>
+                    <span>Cadangkan & Pemulihan Data</span>
+                </h3>
+                <button onclick="app.closeBackupModal()" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                Semua data tersimpan secara aman di memori browser HP/Komputer Anda. Ekspor data ke JSON untuk dicadangkan atau dipindahkan ke perangkat lain.
+            </p>
+
+            <div class="space-y-3">
+                <button onclick="app.exportJSON()" class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 text-xs font-semibold text-zinc-800 dark:text-zinc-200 transition-colors">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Unduh File Cadangan (JSON)</span>
+                </button>
+
+                <div class="pt-2">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Impor Data dari JSON</label>
+                    <textarea id="importJSONArea" rows="4" placeholder="Tempelkan isi teks file JSON di sini..." class="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none font-mono"></textarea>
+                    
+                    <button onclick="app.importJSON()" class="w-full mt-2 p-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold transition-opacity hover:opacity-90">
+                        Proses Impor Data
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Chronos - Time Blocking & 1-Month Planner Engine
+         * Clean Architecture, zero external framework dependencies, bulletproof state handling.
+         */
+        class ChronosApp {
+            constructor() {
+                // Application State
+                this.selectedDate = this.getTodayDateString();
+                this.viewMode = 'daily'; // 'daily' | 'monthly'
+                this.activeFilter = 'ALL';
+                this.selectedColor = 'indigo';
+                
+                // Track Month view state
+                const now = new Date();
+                this.viewYear = now.getFullYear();
+                this.viewMonth = now.getMonth();
+
+                // Database in LocalStorage indexed by YYYY-MM-DD
+                this.store = {};
+
+                // Category styling configs
+                this.colorPalette = {
+                    indigo: { label: 'Indigo', bg: 'bg-indigo-50 dark:bg-indigo-950/40', border: 'border-indigo-500', dot: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300' },
+                    sky: { label: 'Sky', bg: 'bg-sky-50 dark:bg-sky-950/40', border: 'border-sky-500', dot: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-300' },
+                    emerald: { label: 'Emerald', bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-300' },
+                    amber: { label: 'Amber', bg: 'bg-amber-50 dark:bg-amber-950/40', border: 'border-amber-500', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-300' },
+                    rose: { label: 'Rose', bg: 'bg-rose-50 dark:bg-rose-950/40', border: 'border-rose-500', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-300' },
+                    violet: { label: 'Violet', bg: 'bg-violet-50 dark:bg-violet-950/40', border: 'border-violet-500', dot: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-300' }
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.setupTheme();
+                this.loadDatabase();
+                this.renderColorRadios();
+                this.renderTimelineGrid();
+                
+                // Date picker setup
+                const picker = document.getElementById('mainDatePicker');
+                if (picker) picker.value = this.selectedDate;
+
+                this.renderAll();
+
+                // Live time ticker
+                this.updateLiveTimeIndicator();
+                setInterval(() => this.updateLiveTimeIndicator(), 60000);
+            }
+
+            loadDatabase() {
+                try {
+                    const raw = localStorage.getItem('chronos_timeblock_db');
+                    if (raw) {
+                        this.store = JSON.parse(raw);
+                    } else {
+                        this.store = {};
+                    }
+                } catch (e) {
+                    console.error("Gagal memuat localStorage, reset ke objek kosong:", e);
+                    this.store = {};
+                }
+            }
+
+            saveDatabase() {
+                try {
+                    localStorage.setItem('chronos_timeblock_db', JSON.stringify(this.store));
+                } catch (e) {
+                    this.showToast('Gagal menyimpan data ke memori!', 'error');
+                }
+            }
+
+            getTodayDateString() {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const d = String(now.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            setView(mode) {
+                this.viewMode = mode;
+                const dailyEl = document.getElementById('dailyView');
+                const monthlyEl = document.getElementById('monthlyView');
+
+                const dailyBtn = document.getElementById('viewDailyBtn');
+                const monthlyBtn = document.getElementById('viewMonthlyBtn');
+
+                const mobDaily = document.getElementById('mobileNavDaily');
+                const mobMonthly = document.getElementById('mobileNavMonthly');
+
+                if (mode === 'daily') {
+                    dailyEl.classList.remove('hidden');
+                    monthlyEl.classList.add('hidden');
+
+                    dailyBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm";
+                    monthlyBtn.className = "px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100";
+
+                    if (mobDaily) mobDaily.className = "flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold";
+                    if (mobMonthly) mobMonthly.className = "flex flex-col items-center gap-0.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200";
+
+                    this.renderDailyView();
+                } else {
+                    dailyEl.classList.add('hidden');
+                    monthlyEl.classList.remove('hidden');
+
+                    monthlyBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm";
+                    dailyBtn.className = "px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100";
+
+                    if (mobMonthly) mobMonthly.className = "flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold";
+                    if (mobDaily) mobDaily.className = "flex flex-col items-center gap-0.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200";
+
+                    this.renderMonthlyView();
+                }
+            }
+
+            setDate(dateStr) {
+                if (!dateStr) return;
+                this.selectedDate = dateStr;
+                const picker = document.getElementById('mainDatePicker');
+                if (picker) picker.value = dateStr;
+                
+                // Update month view tracker to match selected date
+                const dt = new Date(dateStr);
+                this.viewYear = dt.getFullYear();
+                this.viewMonth = dt.getMonth();
+
+                this.renderAll();
+            }
+
+            navigateDate(days) {
+                const dt = new Date(this.selectedDate);
+                dt.setDate(dt.getDate() + days);
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                this.setDate(`${y}-${m}-${d}`);
+            }
+
+            jumpToToday() {
+                this.setDate(this.getTodayDateString());
+            }
+
+            navigateMonth(delta) {
+                this.viewMonth += delta;
+                if (this.viewMonth > 11) {
+                    this.viewMonth = 0;
+                    this.viewYear++;
+                } else if (this.viewMonth < 0) {
+                    this.viewMonth = 11;
+                    this.viewYear--;
+                }
+                this.renderMonthlyView();
+            }
+
+            jumpToCurrentMonth() {
+                const now = new Date();
+                this.viewYear = now.getFullYear();
+                this.viewMonth = now.getMonth();
+                this.renderMonthlyView();
+            }
+
+            renderTimelineGrid() {
+                const gridContainer = document.getElementById('hourlyGridLines');
+                gridContainer.querySelectorAll('.hourly-row-line').forEach(el => el.remove());
+
+                // Hours 05:00 to 23:00 (19 hours total)
+                for (let h = 5; h <= 23; h++) {
+                    const timeLabel = String(h).padStart(2, '0') + ':00';
+                    const topPx = (h - 5) * 60; // 60px height per hour
+
+                    const row = document.createElement('div');
+                    row.className = 'hourly-row-line absolute left-0 right-0 border-t border-zinc-200/70 dark:border-zinc-800/70 flex items-center pointer-events-none';
+                    row.style.top = `${topPx}px`;
+                    row.style.height = '60px';
+
+                    row.innerHTML = `
+                        <div class="absolute -left-12 sm:-left-16 top-0 transform -translate-y-1/2 w-10 sm:w-14 text-right pr-2 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+                            ${timeLabel}
+                        </div>
+                    `;
+                    gridContainer.appendChild(row);
+                }
+            }
+
+            timeToMins(tStr) {
+                const [h, m] = tStr.split(':').map(Number);
+                return h * 60 + m;
+            }
+
+            minsToTime(mTotal) {
+                const h = Math.floor(mTotal / 60);
+                const m = mTotal % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            }
+
+            renderAll() {
+                this.updateFormattedDateHeader();
+                if (this.viewMode === 'daily') {
+                    this.renderDailyView();
+                } else {
+                    this.renderMonthlyView();
+                }
+            }
+
+            updateFormattedDateHeader() {
+                const textEl = document.getElementById('formattedDateText');
+                if (!textEl) return;
+
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const formatted = new Date(this.selectedDate + 'T00:00:00').toLocaleDateString('id-ID', options);
+                textEl.innerText = `(${formatted})`;
+            }
+
+            getBlocksForDate(dateStr) {
+                return this.store[dateStr] || [];
+            }
+
+            renderDailyView() {
+                const blocks = this.getBlocksForDate(this.selectedDate);
+                const container = document.getElementById('blocksContainer');
+                container.innerHTML = '';
+
+                // Filter blocks if active category filter is applied
+                const filteredBlocks = this.activeFilter === 'ALL' 
+                    ? blocks 
+                    : blocks.filter(b => b.category === this.activeFilter);
+
+                const startDayMins = 5 * 60; // 05:00 AM = 300 minutes
+
+                filteredBlocks.forEach(block => {
+                    const startMins = this.timeToMins(block.startTime);
+                    const endMins = this.timeToMins(block.endTime);
+                    const durationMins = Math.max(15, endMins - startMins);
+
+                    const topPx = Math.max(0, startMins - startDayMins);
+                    const heightPx = durationMins; // 1px = 1 min
+
+                    const palette = this.colorPalette[block.color || 'indigo'] || this.colorPalette.indigo;
+
+                    const card = document.createElement('div');
+                    card.className = `absolute left-0 right-0 rounded-xl p-3 border ${palette.bg} ${palette.border} transition-all shadow-sm flex flex-col justify-between group hover:shadow-md cursor-pointer overflow-hidden`;
+                    card.style.top = `${topPx}px`;
+                    card.style.height = `${heightPx}px`;
+
+                    const completedSubtasks = (block.subtasks || []).filter(s => s.done).length;
+                    const totalSubtasks = (block.subtasks || []).length;
+
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span class="w-2 h-2 rounded-full ${palette.dot} flex-shrink-0"></span>
+                                <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">${block.title}</h4>
+                            </div>
+
+                            <div class="flex items-center space-x-1 flex-shrink-0">
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/80 dark:bg-zinc-900/80 ${palette.text} border border-zinc-200/50 dark:border-zinc-700/50">
+                                    ${block.startTime} - ${block.endTime}
+                                </span>
+                            </div>
+                        </div>
+
+                        ${heightPx >= 50 ? `
+                            <div class="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium">${block.category}</span>
+                                    ${totalSubtasks > 0 ? `<span>• ${completedSubtasks}/${totalSubtasks} subtask</span>` : ''}
+                                </div>
+                                <span class="font-bold uppercase tracking-wider text-[9px] ${block.status === 'Selesai' ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">
+                                    ${block.status}
+                                </span>
+                            </div>
+                        ` : ''}
+                    `;
+
+                    card.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.openModal(block.id);
+                    });
+
+                    container.appendChild(card);
+                });
+
+                this.renderDailyAnalytics(blocks);
+                this.updateLiveTimeIndicator();
+            }
+
+            renderDailyAnalytics(blocks) {
+                const total = blocks.length;
+                const done = blocks.filter(b => b.status === 'Selesai').length;
+                const ongoing = blocks.filter(b => b.status === 'Berjalan').length;
+                const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
+
+                document.getElementById('totalCount').innerText = total;
+                document.getElementById('doneCount').innerText = done;
+                document.getElementById('ongoingCount').innerText = ongoing;
+
+                document.getElementById('progressPercentageBadge').innerText = `${percentage}%`;
+                document.getElementById('dailyProgressText').innerText = `${percentage}% Selesai`;
+                document.getElementById('dailyProgressBar').style.width = `${percentage}%`;
+
+                // Category Allocation Breakdown
+                const categoryListEl = document.getElementById('categoryAllocationList');
+                categoryListEl.innerHTML = '';
+
+                if (total === 0) {
+                    categoryListEl.innerHTML = `<p class="text-zinc-400 italic text-center py-2">Belum ada kegiatan terjadwal hari ini.</p>`;
+                    return;
+                }
+
+                const categoryMinutes = {};
+                let totalMinutesDay = 0;
+
+                blocks.forEach(b => {
+                    const dur = this.timeToMins(b.endTime) - this.timeToMins(b.startTime);
+                    const cat = b.category || 'Pribadi';
+                    categoryMinutes[cat] = (categoryMinutes[cat] || 0) + dur;
+                    totalMinutesDay += dur;
+                });
+
+                Object.keys(categoryMinutes).forEach(cat => {
+                    const mins = categoryMinutes[cat];
+                    const hrs = (mins / 60).toFixed(1);
+                    const pct = totalMinutesDay > 0 ? Math.round((mins / totalMinutesDay) * 100) : 0;
+
+                    const row = document.createElement('div');
+                    row.className = 'space-y-1';
+                    row.innerHTML = `
+                        <div class="flex items-center justify-between text-xs font-medium">
+                            <span class="text-zinc-700 dark:text-zinc-300">${cat}</span>
+                            <span class="text-zinc-500 dark:text-zinc-400 font-semibold">${hrs} Jam (${pct}%)</span>
+                        </div>
+                        <div class="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-zinc-800 dark:bg-zinc-200 h-full rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                    `;
+                    categoryListEl.appendChild(row);
+                });
+            }
+
+            renderMonthlyView() {
+                const gridContainer = document.getElementById('monthlyGridCells');
+                const titleEl = document.getElementById('monthlyCalendarTitle');
+                if (!gridContainer) return;
+
+                gridContainer.innerHTML = '';
+
+                const firstDay = new Date(this.viewYear, this.viewMonth, 1);
+                const lastDay = new Date(this.viewYear, this.viewMonth + 1, 0);
+
+                const startDayIndex = firstDay.getDay(); // 0 = Sunday
+                const totalMonthDays = lastDay.getDate();
+
+                const monthNames = [
+                    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                ];
+
+                titleEl.innerText = `${monthNames[this.viewMonth]} ${this.viewYear}`;
+
+                let monthMinutesTotal = 0;
+                let monthTotalTasksCount = 0;
+                let monthCompletedTasksCount = 0;
+
+                // Blank cells before day 1
+                for (let i = 0; i < startDayIndex; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'min-h-[75px] sm:min-h-[95px] p-2 rounded-xl bg-zinc-100/40 dark:bg-zinc-850/40 border border-zinc-100 dark:border-zinc-800/40 opacity-30';
+                    gridContainer.appendChild(emptyCell);
+                }
+
+                const todayStr = this.getTodayDateString();
+
+                // Month days cells
+                for (let day = 1; day <= totalMonthDays; day++) {
+                    const mStr = String(this.viewMonth + 1).padStart(2, '0');
+                    const dStr = String(day).padStart(2, '0');
+                    const cellDateStr = `${this.viewYear}-${mStr}-${dStr}`;
+
+                    const dayBlocks = this.getBlocksForDate(cellDateStr);
+                    const taskCount = dayBlocks.length;
+                    const doneCount = dayBlocks.filter(b => b.status === 'Selesai').length;
+
+                    dayBlocks.forEach(b => {
+                        const dur = this.timeToMins(b.endTime) - this.timeToMins(b.startTime);
+                        monthMinutesTotal += dur;
+                    });
+
+                    monthTotalTasksCount += taskCount;
+                    monthCompletedTasksCount += doneCount;
+
+                    const isToday = cellDateStr === todayStr;
+                    const isSelected = cellDateStr === this.selectedDate;
+
+                    const cell = document.createElement('div');
+                    cell.className = `min-h-[75px] sm:min-h-[95px] p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group ${
+                        isSelected 
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-md ring-2 ring-zinc-500/20' 
+                            : isToday 
+                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-zinc-900 dark:text-zinc-100' 
+                            : 'bg-white dark:bg-zinc-850 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 text-zinc-800 dark:text-zinc-200'
+                    }`;
+
+                    cell.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold ${isToday && !isSelected ? 'w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center' : ''}">${day}</span>
+                            ${taskCount > 0 ? `
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-zinc-700 text-white dark:bg-zinc-300 dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'}">
+                                    ${taskCount}
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        ${taskCount > 0 ? `
+                            <div class="space-y-1 my-1">
+                                <div class="w-full ${isSelected ? 'bg-zinc-700 dark:bg-zinc-300' : 'bg-zinc-100 dark:bg-zinc-800'} h-1.5 rounded-full overflow-hidden">
+                                    <div class="${isSelected ? 'bg-white dark:bg-zinc-900' : 'bg-emerald-500'} h-full rounded-full" style="width: ${Math.round((doneCount/taskCount)*100)}%"></div>
+                                </div>
+                                <p class="text-[9px] ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'} truncate hidden sm:block">
+                                    ${doneCount}/${taskCount} Selesai
+                                </p>
+                            </div>
+                        ` : `
+                            <span class="text-[9px] ${isSelected ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-300 dark:text-zinc-600'} italic">Kosong</span>
+                        `}
+                    `;
+
+                    cell.addEventListener('click', () => {
+                        this.setDate(cellDateStr);
+                        this.setView('daily');
+                    });
+
+                    gridContainer.appendChild(cell);
+                }
+
+                // Month summary metrics update
+                document.getElementById('monthTotalHours').innerText = `${(monthMinutesTotal / 60).toFixed(1)} Jam`;
+                document.getElementById('monthTotalTasks').innerText = monthTotalTasksCount;
+                document.getElementById('monthCompletedTasks').innerText = monthCompletedTasksCount;
+
+                const completionRate = monthTotalTasksCount > 0 
+                    ? Math.round((monthCompletedTasksCount / monthTotalTasksCount) * 100) 
+                    : 0;
+                document.getElementById('monthCompletionRate').innerText = `${completionRate}%`;
+            }
+
+            renderColorRadios() {
+                const container = document.getElementById('colorPickerContainer');
+                if (!container) return;
+                container.innerHTML = '';
+
+                Object.keys(this.colorPalette).forEach(key => {
+                    const p = this.colorPalette[key];
+                    const label = document.createElement('label');
+                    label.className = 'cursor-pointer flex items-center';
+                    
+                    label.innerHTML = `
+                        <input type="radio" name="colorOption" value="${key}" class="sr-only" ${this.selectedColor === key ? 'checked' : ''} onchange="app.selectedColor = '${key}'; app.updateColorRadioUI()">
+                        <span class="w-6 h-6 rounded-full ${p.dot} flex items-center justify-center text-white ring-2 ring-offset-2 ring-transparent transition-transform hover:scale-110 color-radio-span" data-key="${key}">
+                            <i class="fa-solid fa-check text-[10px] ${this.selectedColor === key ? '' : 'hidden'}"></i>
+                        </span>
+                    `;
+                    container.appendChild(label);
+                });
+            }
+
+            updateColorRadioUI() {
+                document.querySelectorAll('.color-radio-span').forEach(span => {
+                    const k = span.getAttribute('data-key');
+                    const icon = span.querySelector('i');
+                    if (k === this.selectedColor) {
+                        span.classList.add('ring-zinc-900', 'dark:ring-zinc-100');
+                        if (icon) icon.classList.remove('hidden');
+                    } else {
+                        span.classList.remove('ring-zinc-900', 'dark:ring-zinc-100');
+                        if (icon) icon.classList.add('hidden');
+                    }
+                });
+            }
+
+            appendSubtaskRow(text = '', done = false) {
+                const container = document.getElementById('subtasksListContainer');
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 subtask-item-row';
+
+                row.innerHTML = `
+                    <input type="checkbox" ${done ? 'checked' : ''} class="rounded border-zinc-300 text-zinc-900 focus:ring-0 subtask-chk">
+                    <input type="text" value="${text}" placeholder="Nama sub-task..." class="flex-grow px-3 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none subtask-txt">
+                    <button type="button" onclick="this.parentElement.remove()" class="text-zinc-400 hover:text-rose-500 p-1">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            }
+
+            openModal(blockId = null) {
+                const modal = document.getElementById('blockModal');
+                const titleText = document.getElementById('modalTitleText');
+                const deleteBtn = document.getElementById('deleteBtnModal');
+                const subtaskContainer = document.getElementById('subtasksListContainer');
+                subtaskContainer.innerHTML = '';
+
+                const dateBlocks = this.getBlocksForDate(this.selectedDate);
+
+                if (blockId) {
+                    const block = dateBlocks.find(b => b.id === blockId);
+                    if (!block) return;
+
+                    titleText.innerHTML = `<i class="fa-solid fa-pen-to-square text-xs"></i> Edit Blok Waktu`;
+                    document.getElementById('inputBlockId').value = block.id;
+                    document.getElementById('inputTitle').value = block.title;
+                    document.getElementById('inputStartTime').value = block.startTime;
+                    document.getElementById('inputEndTime').value = block.endTime;
+                    document.getElementById('inputCategory').value = block.category;
+                    document.getElementById('inputStatus').value = block.status;
+                    document.getElementById('inputNotes').value = block.notes || '';
+
+                    this.selectedColor = block.color || 'indigo';
+                    this.updateColorRadioUI();
+
+                    (block.subtasks || []).forEach(st => this.appendSubtaskRow(st.text, st.done));
+
+                    deleteBtn.classList.remove('hidden');
+                } else {
+                    titleText.innerHTML = `<i class="fa-solid fa-plus text-xs"></i> Tambah Blok Waktu Baru`;
+                    document.getElementById('blockForm').reset();
+                    document.getElementById('inputBlockId').value = '';
+
+                    // Default next available hour
+                    let startH = 8;
+                    if (dateBlocks.length > 0) {
+                        const lastBlock = dateBlocks[dateBlocks.length - 1];
+                        const lastEndMins = this.timeToMins(lastBlock.endTime);
+                        startH = Math.min(22, Math.floor(lastEndMins / 60));
+                    }
+
+                    const sHStr = String(startH).padStart(2, '0');
+                    const eHStr = String(Math.min(23, startH + 1)).padStart(2, '0');
+
+                    document.getElementById('inputStartTime').value = `${sHStr}:00`;
+                    document.getElementById('inputEndTime').value = `${eHStr}:00`;
+
+                    this.selectedColor = 'indigo';
+                    this.updateColorRadioUI();
+
+                    deleteBtn.classList.add('hidden');
+                }
+
+                modal.classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('blockModal').classList.add('hidden');
+            }
+
+            saveBlock(e) {
+                e.preventDefault();
+
+                const id = document.getElementById('inputBlockId').value || 'blk_' + Date.now();
+                const title = document.getElementById('inputTitle').value.trim();
+                const startTime = document.getElementById('inputStartTime').value;
+                const endTime = document.getElementById('inputEndTime').value;
+                const category = document.getElementById('inputCategory').value;
+                const status = document.getElementById('inputStatus').value;
+                const notes = document.getElementById('inputNotes').value.trim();
+
+                if (this.timeToMins(endTime) <= this.timeToMins(startTime)) {
+                    this.showToast('Jam selesai harus lebih besar dari jam mulai!', 'error');
+                    return;
+                }
+
+                // Subtasks collection
+                const subtasks = [];
+                document.querySelectorAll('.subtask-item-row').forEach(row => {
+                    const txt = row.querySelector('.subtask-txt').value.trim();
+                    const chk = row.querySelector('.subtask-chk').checked;
+                    if (txt) {
+                        subtasks.push({ text: txt, done: chk });
+                    }
+                });
+
+                const blockObject = {
+                    id,
+                    title,
+                    startTime,
+                    endTime,
+                    category,
+                    status,
+                    notes,
+                    color: this.selectedColor,
+                    subtasks
+                };
+
+                if (!this.store[this.selectedDate]) {
+                    this.store[this.selectedDate] = [];
+                }
+
+                const list = this.store[this.selectedDate];
+                const index = list.findIndex(b => b.id === id);
+
+                if (index > -1) {
+                    list[index] = blockObject;
+                } else {
+                    list.push(blockObject);
+                }
+
+                // Sort blocks by start time ascending
+                list.sort((a, b) => this.timeToMins(a.startTime) - this.timeToMins(b.startTime));
+
+                this.saveDatabase();
+                this.closeModal();
+                this.renderAll();
+                this.showToast('Blok waktu berhasil disimpan!', 'success');
+            }
+
+            deleteCurrentBlock() {
+                const id = document.getElementById('inputBlockId').value;
+                if (!id || !this.store[this.selectedDate]) return;
+
+                this.store[this.selectedDate] = this.store[this.selectedDate].filter(b => b.id !== id);
+                this.saveDatabase();
+                this.closeModal();
+                this.renderAll();
+                this.showToast('Blok waktu telah dihapus', 'info');
+            }
+
+            addQuickTemplate(category, title, durationMins, color) {
+                if (!this.store[this.selectedDate]) {
+                    this.store[this.selectedDate] = [];
+                }
+
+                const list = this.store[this.selectedDate];
+                let startMins = 8 * 60; // 08:00 AM
+
+                if (list.length > 0) {
+                    const last = list[list.length - 1];
+                    startMins = Math.max(startMins, this.timeToMins(last.endTime));
+                }
+
+                if (startMins + durationMins > 24 * 60) {
+                    this.showToast('Jam hari ini sudah penuh!', 'error');
+                    return;
+                }
+
+                const startTime = this.minsToTime(startMins);
+                const endTime = this.minsToTime(startMins + durationMins);
+
+                const newBlock = {
+                    id: 'blk_' + Date.now(),
+                    title,
+                    startTime,
+                    endTime,
+                    category,
+                    status: 'Rencana',
+                    color,
+                    notes: 'Ditambahkan lewat templat cepat',
+                    subtasks: []
+                };
+
+                list.push(newBlock);
+                list.sort((a, b) => this.timeToMins(a.startTime) - this.timeToMins(b.startTime));
+
+                this.saveDatabase();
+                this.renderAll();
+                this.showToast(`Templat "${title}" ditambahkan!`, 'success');
+            }
+
+            setCategoryFilter(cat) {
+                this.activeFilter = cat;
+                document.querySelectorAll('.category-filter-pill').forEach(btn => {
+                    if (btn.getAttribute('data-cat') === cat) {
+                        btn.className = "category-filter-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900";
+                    } else {
+                        btn.className = "category-filter-pill px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900";
+                    }
+                });
+                this.renderDailyView();
+            }
+
+            updateLiveTimeIndicator() {
+                const line = document.getElementById('liveTimeLine');
+                const badge = document.getElementById('liveTimeBadge');
+                if (!line) return;
+
+                const todayStr = this.getTodayDateString();
+                if (this.selectedDate !== todayStr) {
+                    line.classList.add('hidden');
+                    return;
+                }
+
+                const now = new Date();
+                const curMins = now.getHours() * 60 + now.getMinutes();
+                const startMins = 5 * 60; // 05:00 AM
+
+                if (curMins >= startMins && curMins <= 24 * 60) {
+                    const topPx = curMins - startMins;
+                    line.style.top = `${topPx}px`;
+                    badge.innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    line.classList.remove('hidden');
+                } else {
+                    line.classList.add('hidden');
+                }
+            }
+
+            openBackupModal() {
+                document.getElementById('backupModal').classList.remove('hidden');
+            }
+
+            closeBackupModal() {
+                document.getElementById('backupModal').classList.add('hidden');
+            }
+
+            exportJSON() {
+                const jsonStr = JSON.stringify(this.store, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Chronos_Backup_${this.getTodayDateString()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.showToast('File JSON berhasil diunduh!', 'success');
+            }
+
+            importJSON() {
+                const text = document.getElementById('importJSONArea').value.trim();
+                if (!text) {
+                    this.showToast('Tempelkan isi JSON terlebih dahulu!', 'error');
+                    return;
+                }
+
+                try {
+                    const parsed = JSON.parse(text);
+                    if (typeof parsed === 'object') {
+                        this.store = parsed;
+                        this.saveDatabase();
+                        this.closeBackupModal();
+                        this.renderAll();
+                        this.showToast('Data berhasil dipulihkan!', 'success');
+                    } else {
+                        throw new Error('Format salah');
+                    }
+                } catch (e) {
+                    this.showToast('Format JSON tidak valid!', 'error');
+                }
+            }
+
+            setupTheme() {
+                const saved = localStorage.getItem('chronos_theme');
+                if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+
+            toggleTheme() {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('chronos_theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('chronos_theme', 'dark');
+                }
+            }
+
+            showToast(msg, type = 'info') {
+                const toast = document.createElement('div');
+                let bg = 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900';
+                if (type === 'success') bg = 'bg-emerald-600 text-white';
+                if (type === 'error') bg = 'bg-rose-600 text-white';
+
+                toast.className = `fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all transform translate-y-2 opacity-0 flex items-center space-x-2 ${bg}`;
+                toast.innerHTML = `
+                    <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-info-circle'}"></i>
+                    <span>${msg}</span>
+                `;
+
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        let app;
+        window.addEventListener('DOMContentLoaded', () => {
+            app = new ChronosApp();
+        });
+    </script>
+</body>
+</html>
